@@ -2,12 +2,14 @@
 import json
 import sys
 from pathlib import Path
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 root=Path(__file__).resolve().parent.parent
 runs=root/'runs'
 if len(sys.argv)>1 and sys.argv[1]!='latest':
     run_dir=runs/sys.argv[1]
 else:
-    choices=sorted((p for p in runs.iterdir() if p.is_dir()),reverse=True) if runs.exists() else []
+    choices=sorted((p for p in runs.iterdir() if p.is_dir()), key=lambda p: p.stat().st_mtime, reverse=True) if runs.exists() else []
     if not choices:
         raise SystemExit('No real run evidence exists yet. Preview and reference mode are not model runs.')
     run_dir=choices[0]
@@ -15,14 +17,14 @@ if not run_dir.resolve().is_relative_to(runs.resolve()):
     raise SystemExit('Invalid run id')
 if not run_dir.exists():
     raise SystemExit('Run not found')
-summary=json.loads((run_dir/'summary.json').read_text()) if (run_dir/'summary.json').exists() else {}
-events=json.loads((run_dir/'events.json').read_text()) if (run_dir/'events.json').exists() else []
+summary=json.loads((run_dir/'summary.json').read_text(encoding='utf-8')) if (run_dir/'summary.json').exists() else {}
+events=json.loads((run_dir/'events.json').read_text(encoding='utf-8')) if (run_dir/'events.json').exists() else []
 print('Run ID:',run_dir.name)
 print('Outcome:',summary.get('status','incomplete'))
 print('Provider map:',summary.get('providers',{}))
 print('Model names:',summary.get('models',{}))
 print('Worker phases:',[(e['actor'],e['title']) for e in events if e['title']=='CrewAI specialist started'])
-manager_decisions=json.loads((run_dir/'manager-decisions.json').read_text()) if (run_dir/'manager-decisions.json').exists() else []
+manager_decisions=json.loads((run_dir/'manager-decisions.json').read_text(encoding='utf-8')) if (run_dir/'manager-decisions.json').exists() else []
 print('REAL MANAGER DECISIONS:',len(manager_decisions))
 for d in manager_decisions: print('  ',d.get('step'),d.get('assign'),':',d.get('reason'))
 print('Manager assignments evidenced:',all(any(e.get('actor')=='Manager' and e.get('type')=='handoff' for e in events) for _ in [0]))
@@ -40,7 +42,7 @@ for name in ('qa-tests.txt','release-gate.txt'):
     p=run_dir/name
     print(f'{name}:', 'present' if p.exists() else 'missing')
     if p.exists():
-        lines=[x for x in p.read_text().splitlines() if x.startswith('# pass ') or x.startswith('# fail ')]
+        lines=[x for x in p.read_text(encoding='utf-8').splitlines() if x.startswith('# pass ') or x.startswith('# fail ')]
         print(' ', ', '.join(lines))
 gate=[e for e in events if e['title']=='Independent release gate']
 if gate: print('Release gate:', gate[-1]['detail'])

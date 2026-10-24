@@ -1,9 +1,14 @@
 """Credential-free diagnostics for the facilitator: never print API key values."""
 import importlib.util
 import os
+import sys
 from pathlib import Path
 import shutil
 import subprocess
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 root = Path(__file__).resolve().parent.parent
 try:
     from dotenv import load_dotenv
@@ -19,7 +24,7 @@ for mod in ('crewai', 'litellm', 'google.genai'):
     print(f'{mod}:', 'installed' if found else 'MISSING')
 print('Node:', subprocess.getoutput('node --version') if shutil.which('node') else 'MISSING')
 print('Feature slot files:', all((root / p).exists() for p in ('site/feature.js', 'api/feature.mjs', 'tests/feature.acceptance.test.mjs')))
-starter = all((root / t).read_text() == (root / 'facilitator/starter' / n).read_text()
+starter = all((root / t).read_text(encoding='utf-8') == (root / 'facilitator/starter' / n).read_text(encoding='utf-8')
               for t, n in (('site/feature.js', 'feature.js'), ('api/feature.mjs', 'feature.mjs'),
                            ('tests/feature.acceptance.test.mjs', 'feature.acceptance.test.mjs')))
 print('Workspace reset to starter:', starter, '' if starter else '(click Reset in /office before a run)')

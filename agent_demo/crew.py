@@ -26,6 +26,11 @@ import time
 from datetime import datetime, timezone
 from orchestration import SupervisorState, parse_decision
 
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
 ROOT = Path(__file__).resolve().parent.parent
 FRONTEND = ROOT / "site/feature.js"
 BACKEND = ROOT / "api/feature.mjs"
@@ -118,9 +123,14 @@ def execute_tests(files=None):
         files = (CONTRACT_TESTS, "tests/feature.acceptance.test.mjs") + ((INDEPENDENT_DISCOUNT_TESTS,) if DISCOUNT_DEMO else ())
     """Run the real Node tests. Returns (passed, output, summary)."""
     try:
-        env = {"PATH": os.environ.get("PATH", "/usr/bin:/bin"), "HOME": "/tmp"}
+        env = {
+            "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+            "HOME": os.environ.get("USERPROFILE", os.environ.get("HOME", "/tmp")),
+            "SystemRoot": os.environ.get("SystemRoot", r"C:\Windows"),
+            "PATHEXT": os.environ.get("PATHEXT", ".COM;.EXE;.BAT;.CMD"),
+        }
         run = subprocess.run(["node", "--test", "--test-reporter=tap", *files],
-                             cwd=ROOT, capture_output=True, text=True, timeout=30, check=False, env=env)
+                             cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30, check=False, env=env)
         output = (run.stdout + "\n" + run.stderr)[-12000:]
         passed = run.returncode == 0
     except (OSError, subprocess.TimeoutExpired) as exc:
