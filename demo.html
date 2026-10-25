@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Shrey's AI Engineering Office</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700;800&family=Yellowtail&display=swap"/>
+<link rel="stylesheet" href="/demo.css"/></head>
+<body>
+<div id="stage">
+  <div id="world">
+    <div class="wall"></div>
+    <div class="window left"><div class="sky"></div><div class="sky-dawn"></div><div class="sun"></div><div class="city"></div><div class="mullion v"></div><div class="mullion h"></div><div class="glass"></div></div>
+    <div class="window right"><div class="sky"></div><div class="sky-dawn"></div><div class="city"></div><div class="mullion v"></div><div class="mullion h"></div><div class="glass"></div></div>
+    <div class="clock"><i class="hr" id="clock-hr"></i><i class="mn" id="clock-mn"></i></div>
+    <div class="board" id="board"><div class="board-head"><span>SPRINT 42 · CAMPUSBITES</span><span>CB-142</span></div><div class="board-cols"><div>TO DO</div><div>DOING</div><div>DONE</div></div></div>
+    <div class="baseboard"></div>
+    <div class="floor"></div>
+    <div class="rug"></div>
+    <div class="plant" style="left:620px;top:350px"></div>
+    <div class="plant" style="left:1640px;top:350px"></div>
+    <div class="coffee"><div class="body"></div><div class="light"></div><div class="cup"></div><div class="steam" style="left:42px;bottom:36px"></div></div>
+    <div class="room-dark" id="room-dark"></div>
+    <div class="sign" id="sign"><div class="script">Shrey's Software Engineering Team</div><div class="sub">— POWERED BY <b>AI</b> —</div></div>
+    <div id="stations"></div>
+    <div id="morgan"></div>
+    <div id="ticket"><div class="tk-top"><span>TICKET CB-142</span><span>P1</span></div><div class="tk-code">STUDENT10</div><div class="tk-step" id="tk-step">Student discount</div><div class="tk-bar"></div></div>
+  </div>
+
+  <div class="ov" id="spot"></div>
+  <div class="ov" id="vignette"></div>
+  <div class="ov bar top"><span class="rec hud-fade"><i></i>OFFICE CAM 01 · SHREY'S ENGINEERING</span><span class="big hud-fade" id="hud-clock">09:54:31</span><span class="hud-fade" id="hud-run">RUN 4fd735f · T+00:00</span></div>
+  <div class="ov bar bottom"><span class="hud-fade">CREWAI · GEMINI 3.5 FLASH-LITE + GROQ GPT-OSS 120B</span><span class="hud-fade" id="hud-calls">MODEL CALLS 0</span></div>
+  <div class="ov hud-fade" id="pipeline"><span data-step="spec" style="--c:var(--blue)">SPEC</span><span data-step="tests" style="--c:var(--violet)">TESTS</span><span data-step="api" style="--c:var(--orange)">API</span><span data-step="ui" style="--c:var(--teal)">UI</span><span data-step="verify" style="--c:var(--violet)">VERIFY</span></div>
+  <div class="ov" id="chat"><div class="chat-head"><strong># ship-student-discount</strong><small>6 members · 5 AI agents · 1 human</small></div><div class="chat-list" id="chat-list"></div><div class="typing-row" id="typing"><i></i><i></i><i></i> <span></span></div></div>
+  <div class="ov" id="decision"><div class="d-top"><span>MORGAN · MANAGER DECISION</span><span id="d-call"></span></div><div class="d-assign" id="d-assign"></div><div class="d-reason" id="d-reason"></div></div>
+  <div class="ov" id="chapter"><div class="num" id="ch-num"></div><div class="ttl" id="ch-ttl"></div></div>
+  <div class="ov" id="cast"><div class="c-over">MEET THE TEAM</div><div class="c-name" id="c-name"></div><div class="c-role" id="c-role"></div><div class="c-line" id="c-line"></div><div class="c-bar"></div></div>
+  <div class="ov" id="meter"><div class="m-label">INDEPENDENT TEST RUN</div><div class="m-num" id="m-num">0 / 17</div><div class="m-track"><div class="m-fill" id="m-fill"></div></div></div>
+  <div class="ov" id="stamp">PASS</div>
+  <div class="ov" id="confetti"></div>
+  <div class="ov" id="center-text"><span id="center-inner"></span></div>
+  <div class="ov" id="notif"><div class="n-icon">✳</div><div><div class="n-top"><span>CAMPUSBITES · #product</span><span>now</span></div><div class="n-from">Shrey · Founder</div><div class="n-text">Students keep asking for a discount. Can we ship <b>STUDENT10</b> today? 10% off, minimum ₹299, capped at ₹100.</div></div></div>
+  <div class="ov" id="product">
+    <div class="p-copy"><div class="over">CHAPTER 05 · SHIPPED</div><h2>Live in<br/>the <em>app.</em></h2><p>One message from Shrey at 09:54:31. A tested, working feature in the shop at 09:56:27.</p></div>
+    <div class="shop"><div class="shop-top"><span>campus<b>bites</b>.</span><span class="bagc">Your bag · 2</span></div>
+      <div class="shop-body">
+        <div class="shop-item"><span class="dish">🍕</span><div>Margherita Magic<small>₹259 × 2</small></div><strong>₹518</strong></div>
+        <div class="shop-coupon"><span>Student discount</span><code>STUDENT10 ✓</code></div>
+        <div class="shop-lines"><div><span>Subtotal</span><span>₹518</span></div><div class="off"><span>Student Discount (STUDENT10)</span><span>−₹52</span></div><div><span>Delivery</span><span>Free</span></div><div class="tot"><span>Total</span><span>₹466</span></div></div>
+        <div class="shop-cta">Place order →</div>
+      </div></div>
+  </div>
+  <div class="ov" id="endcard">
+    <div class="e-over">SHREY'S SOFTWARE ENGINEERING TEAM</div>
+    <h2>This is how we're<br/>going to <em>build.</em></h2>
+    <div class="e-ai">— POWERED BY AI —</div>
+    <div class="stats"><div class="stat"><b data-count="5">0</b><span>AI agents,<br/>one manager</span></div><div class="stat"><b data-count="5">0</b><span>handoffs, each<br/>reasoned by the manager</span></div><div class="stat"><b data-count="17" data-suffix="/17">0</b><span>tests passing,<br/>written before the code</span></div><div class="stat"><b data-time="116">0s</b><span>from message<br/>to shipped</span></div></div>
+    <div class="e-foot">Replay of real run <b>20261024095431-4fd735f</b> · CrewAI · Gemini 3.5 Flash-Lite + Groq GPT-OSS 120B.<br/>Dialogue is dramatized. Manager decisions, timestamps, code and test results come from the run's audit log.</div>
+    <button class="replay" id="replay">↻ REPLAY</button>
+  </div>
+  <div class="ov" id="flash"></div>
+  <canvas class="ov" id="grain"></canvas>
+</div>
+<div id="start">
+  <div class="s-over">A SHORT FILM</div>
+  <h1>Shrey's Software<br/>Engineering <em>Team</em></h1>
+  <div class="s-ai">POWERED BY AI</div>
+  <button id="play" aria-label="Play film">▶</button>
+  <div class="s-keys">Space pause · R restart · M mute · F fullscreen<br/>Record at 1920×1080 for LinkedIn · sound on</div>
+</div>
+<div id="paused">PAUSED</div>
+<script src="/demo.js"></script>
+</body></html>

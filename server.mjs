@@ -118,9 +118,12 @@ const server=http.createServer((req,res)=>{const url=new URL(req.url,`http://${h
  if(url.pathname==='/office')return serveFile(res,ROOT,'office.html');
  if(url.pathname==='/office.css')return serveFile(res,ROOT,'office.css');
  if(url.pathname==='/office.js')return serveFile(res,ROOT,'office.js');
+ if(url.pathname==='/demo')return serveFile(res,ROOT,'demo.html');
+ if(url.pathname==='/demo.css')return serveFile(res,ROOT,'demo.css');
+ if(url.pathname==='/demo.js')return serveFile(res,ROOT,'demo.js');
  if(url.pathname==='/studio')return serveFile(res,ROOT,'studio.html');
  if(url.pathname==='/studio.css')return serveFile(res,ROOT,'studio.css');
  if(url.pathname==='/studio.js')return serveFile(res,ROOT,'studio.js');
  return serveFile(res,STATIC,url.pathname==='/'?'index.html':url.pathname)
 });
-server.listen(port,host,()=>console.log(`CampusBites http://${host}:${port}\nAI Office http://${host}:${port}/office\nAI Team Studio http://${host}:${port}/studio`));
+server.listen(port,host,()=>console.log(`CampusBites http://${host}:${port}\nAI Office http://${host}:${port}/office\nAI Team Studio http://${host}:${port}/studio\nCinematic demo http://${host}:${port}/demo`));
