@@ -21,18 +21,20 @@ function frame(now){
   }
   requestAnimationFrame(frame);
 }
-requestAnimationFrame(frame);
+const RENDER=new URLSearchParams(location.search).has('render');
+if(!RENDER)requestAnimationFrame(frame);
 // ?seek=ms fast-forwards the script (for previewing a moment, not for recording).
 let filmT=0,seekTo=Number(new URLSearchParams(location.search).get('seek')||0);
 function wait(ms){filmT+=ms;if(filmT<seekTo)return Promise.resolve();return new Promise(r=>waiters.push({t:vt+ms,r}))}
+const later=(ms,fn)=>waiters.push({t:vt+ms,r:fn});
 
 // ---- sound: everything synthesized, no files ----
+// In ?render mode sounds are logged with their film time and rendered offline afterwards.
 const sfx=(()=>{
-  let ctx,master,noiseBuf,pad=[];let muted=false;
-  function init(){
-    if(ctx)return;
-    try{ctx=new AudioContext()}catch{return}
-    master=ctx.createGain();master.gain.value=.6;master.connect(ctx.destination);
+  let ctx,master,noiseBuf,pad=[],muted=false,base=null;const log=[];
+  const T=()=>base??ctx.currentTime;
+  function setup(c){
+    ctx=c;pad=[];master=ctx.createGain();master.gain.value=.6;master.connect(ctx.destination);
     noiseBuf=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate);
     const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
   }
@@ -41,17 +43,15 @@ const sfx=(()=>{
     node.connect(g);g.connect(master);return g;
   }
   function tone(type,f,dur,peak=.15,{a=.005,when=0,to}={}){
-    if(!ctx)return;const t=ctx.currentTime+when,o=ctx.createOscillator();o.type=type;o.frequency.setValueAtTime(f,t);
+    const t=T()+when,o=ctx.createOscillator();o.type=type;o.frequency.setValueAtTime(f,t);
     if(to)o.frequency.exponentialRampToValueAtTime(to,t+dur);out(o,t,a,dur,peak);o.start(t);o.stop(t+a+dur+.05);
   }
   function hiss(dur,peak,type,f,{q=1,when=0,to}={}){
-    if(!ctx)return;const t=ctx.currentTime+when,s=ctx.createBufferSource();s.buffer=noiseBuf;
+    const t=T()+when,s=ctx.createBufferSource();s.buffer=noiseBuf;
     const fl=ctx.createBiquadFilter();fl.type=type;fl.frequency.setValueAtTime(f,t);fl.Q.value=q;if(to)fl.frequency.exponentialRampToValueAtTime(to,t+dur);
     s.connect(fl);out(fl,t,.01,dur,peak);s.start(t,Math.random());s.stop(t+dur+.1);
   }
-  return {
-    init,ctx:()=>ctx,
-    toggle(){muted=!muted;if(master)master.gain.value=muted?0:.6;return muted},
+  const voices={
     tick(){hiss(.025,.035,'highpass',3500+Math.random()*2500)},
     voice(p){tone('triangle',p*(0.9+Math.random()*.25),.07,.05)},
     ping(){tone('sine',988,.3,.09);tone('sine',1319,.4,.07,{when:.07})},
@@ -67,17 +67,29 @@ const sfx=(()=>{
     chord(){[523.25,659.25,783.99,1046.5,1318.5].forEach((f,i)=>tone('sine',f,2.8,.07,{a:.02,when:i*.06}));hiss(1.5,.05,'highpass',8000)},
     shimmer(){[1568,2093,2637,3136].forEach((f,i)=>tone('sine',f,.6,.03,{when:i*.07}))},
     padStart(){
-      if(!ctx||pad.length)return;
-      const fl=ctx.createBiquadFilter();fl.type='lowpass';fl.frequency.value=360;
-      const g=ctx.createGain();g.gain.value=0;g.gain.linearRampToValueAtTime(.05,ctx.currentTime+4);
+      if(pad.length)return;const t=T();
+      const fl=ctx.createBiquadFilter();fl.type='lowpass';fl.frequency.setValueAtTime(360,t);
+      const g=ctx.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.05,t+4);
       fl.connect(g);g.connect(master);
-      for(const f of [55,82.41,110.5]){const o=ctx.createOscillator();o.type='sawtooth';o.frequency.value=f;o.detune.value=Math.random()*12-6;o.connect(fl);o.start();pad.push(o)}
-      const lfo=ctx.createOscillator(),lg=ctx.createGain();lfo.frequency.value=.07;lg.gain.value=160;lfo.connect(lg);lg.connect(fl.frequency);lfo.start();pad.push(lfo);
+      for(const f of [55,82.41,110.5]){const o=ctx.createOscillator();o.type='sawtooth';o.frequency.value=f;o.detune.value=Math.random()*12-6;o.connect(fl);o.start(t);pad.push(o)}
+      const lfo=ctx.createOscillator(),lg=ctx.createGain();lfo.frequency.value=.07;lg.gain.value=160;lfo.connect(lg);lg.connect(fl.frequency);lfo.start(t);pad.push(lfo);
       pad.filter=fl;pad.gain=g;
     },
-    padBright(){if(pad.filter)pad.filter.frequency.linearRampToValueAtTime(1400,ctx.currentTime+3)},
-    padStop(){if(pad.gain)pad.gain.gain.linearRampToValueAtTime(0,ctx.currentTime+2.5);const old=pad;pad=[];setTimeout(()=>old.forEach(o=>{try{o.stop()}catch{}}),2800)},
+    padBright(){if(!pad.filter)return;const t=T();pad.filter.frequency.setValueAtTime(360,t);pad.filter.frequency.linearRampToValueAtTime(1400,t+3)},
+    padStop(){if(!pad.gain)return;const t=T();pad.gain.gain.setValueAtTime(.05,t);pad.gain.gain.linearRampToValueAtTime(0,t+2.5);pad.forEach(o=>o.stop(t+2.8));pad=[]},
   };
+  const api={
+    init(){if(ctx||RENDER)return;try{setup(new AudioContext())}catch{}},
+    ctx:()=>ctx,
+    toggle(){muted=!muted;if(master)master.gain.value=muted?0:.6;return muted},
+    async renderOffline(totalMs){
+      const sr=44100,oc=new OfflineAudioContext(2,Math.ceil(sr*(totalMs/1000+3)),sr);setup(oc);
+      for(const [t,name,args] of log){base=t/1000;voices[name](...args)}
+      base=null;return oc.startRendering();
+    },
+  };
+  for(const name of Object.keys(voices))api[name]=(...args)=>{if(RENDER)log.push([vt,name,args]);else if(ctx)voices[name](...args)};
+  return api;
 })();
 
 // ---- cast & set ----
@@ -335,7 +347,7 @@ async function film(){
   openChat();cam(960,520,1.5,1600);
   post('Shrey','Students keep asking for a discount. Can we ship <code>STUDENT10</code> today? 10% off, min ₹299, capped at ₹100.',700);
   await wait(1900);
-  STICKIES.forEach(([id],i)=>setTimeout(()=>$('sk-'+id).classList.add('show'),i*120));
+  STICKIES.forEach(([id],i)=>later(i*120,()=>$('sk-'+id).classList.add('show')));
   await say('Manager','New ticket from Shrey. Student discount, code STUDENT10.',1300);
   await say('Manager','House rule: no code until we have a spec and failing tests.',1500);
   post('Manager','On it. Spec → failing tests → API → UI → full test run. Nobody skips a step.');
@@ -470,7 +482,7 @@ async function film(){
   clockTo(116,600);holoClose('QA');
   cam(960,600,1,1400);
   confetti();
-  ['Manager',...WORKERS].forEach((r,i)=>setTimeout(()=>{mood(r,'happy');mood(r,'bounce')},i*120));
+  ['Manager',...WORKERS].forEach((r,i)=>later(i*120,()=>{mood(r,'happy');mood(r,'bounce')}));
   await wait(1700);hush('Manager');
   post('Shrey','wait… it’s already live?? 🔥',800);
   await wait(2400);
@@ -527,5 +539,41 @@ addEventListener('keydown',(e)=>{
   else if(e.key==='f'||e.key==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen?.()}
 });
 build();
-if(new URLSearchParams(location.search).has('autoplay'))start();
+if(RENDER)renderMode();
+else if(new URLSearchParams(location.search).has('autoplay'))start();
+
+// ---- ?render: a frame-exact export driven by scripts/render-film.mjs ----
+// The driver calls __step(ms) per frame, screenshots, and finally pulls the audio as WAV.
+function renderMode(){
+  const starts=new WeakMap();
+  function syncAnimations(){
+    for(const a of document.getAnimations()){
+      if(!starts.has(a)){starts.set(a,vt);a.pause()}
+      const t=vt-starts.get(a),end=a.effect?.getComputedTiming().endTime;
+      if(end!==Infinity&&t>=end)a.finish();else a.currentTime=t;
+    }
+  }
+  window.__step=async(ms)=>{
+    vt+=ms;
+    for(let k=0;k<50;k++){
+      const due=waiters.filter(w=>vt>=w.t);if(!due.length)break;
+      waiters=waiters.filter(w=>vt<w.t);due.forEach(w=>w.r());
+      await new Promise(r=>setTimeout(r,0));
+    }
+    tickers.forEach(f=>f());syncAnimations();
+    return !!window.__done;
+  };
+  window.__audio=async()=>{
+    const buf=await sfx.renderOffline(vt),L=buf.getChannelData(0),R=buf.getChannelData(1),n=L.length;
+    const bytes=new Uint8Array(44+n*4),v=new DataView(bytes.buffer);
+    const str=(o,t)=>[...t].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));
+    str(0,'RIFF');v.setUint32(4,36+n*4,true);str(8,'WAVEfmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,2,true);
+    v.setUint32(24,buf.sampleRate,true);v.setUint32(28,buf.sampleRate*4,true);v.setUint16(32,4,true);v.setUint16(34,16,true);str(36,'data');v.setUint32(40,n*4,true);
+    for(let i=0;i<n;i++){v.setInt16(44+i*4,Math.max(-1,Math.min(1,L[i]))*32767,true);v.setInt16(46+i*4,Math.max(-1,Math.min(1,R[i]))*32767,true)}
+    window.__wav=bytes;return bytes.length;
+  };
+  window.__wavChunk=(i,size)=>{let s='';const part=window.__wav.subarray(i*size,(i+1)*size);for(let j=0;j<part.length;j+=8192)s+=String.fromCharCode(...part.subarray(j,j+8192));return btoa(s)};
+  $('start').style.display='none';
+  document.fonts.ready.then(()=>{started=true;window.__ready=true;film().then(()=>{window.__done=true})});
+}
 })();
