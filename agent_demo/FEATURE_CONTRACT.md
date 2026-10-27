@@ -22,6 +22,9 @@ export async function onAction(action, input, view, api) -> new state object
 optional export function summaryLines(view) -> [{label, amount}]  // extra bag lines in ₹; negative = discount
 optional export function filterProducts(products, view) -> subset of products to show on the menu
 view = {items: [{id, name, price, qty, category, veg, spicy}], subtotal, products, state, esc}
+There is no bag-change event: render and the hooks are called again with a fresh view whenever the bag changes.
+Anything that depends on the bag (totals, discounts, eligibility) must be computed from view.items / view.subtotal
+inside render/summaryLines, not stored in state at onAction time (state can keep e.g. the applied code).
 Rules: no import, no fetch, no document, no window, no localStorage, no timers.
 
 ## api/feature.mjs (backend, runs in Node at POST /api/feature/<action>)

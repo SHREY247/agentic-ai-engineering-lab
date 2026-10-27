@@ -443,6 +443,14 @@ def main():
                     emit("Manager", "Mission stopped", "Manager stopped the run. The release gate will not be marked passed.", "error")
                     return 1
                 break
+            # A specialist needs at least a tool call plus a final answer; stop cleanly instead of crashing mid-task.
+            provider = ROLES[role]
+            if REQUEST_CAPS[provider] - request_counts[provider] < 2:
+                supervisor.close("STOP")
+                (RUN_DIR / "supervisor-state.json").write_text(json.dumps(supervisor.snapshot(), indent=2), encoding="utf-8")
+                emit("Manager", "Mission stopped", f"Not enough {provider} call budget left for {role} "
+                     f"({request_counts[provider]}/{REQUEST_CAPS[provider]} used). The release gate will not be marked passed.", "error")
+                return 1
             emit("Manager", "Handoff to " + role, "Assigned by manager: " + decision["reason"], "handoff",
                  evidence={"assignment": role, "decision_step": decision["step"]})
             if role == "Architect":
