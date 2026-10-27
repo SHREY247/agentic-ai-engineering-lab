@@ -501,6 +501,140 @@ async function film(){
   await wait(9000);sfx.padStop();
   document.body.classList.remove('playing');
 }
+// ============================ THE 60-SECOND CUT (?cut=short) ============================
+// Same story and evidence; no cast intro or chapter cards, decisions overlap the action.
+async function filmShort(){
+  // cold open: the message
+  await wait(400);
+  $('notif').classList.add('show');sfx.ping();
+  await wait(3000);$('notif').classList.remove('show');await wait(500);
+
+  // title
+  cam(960,175,2.25,0);stage.classList.add('rolling','boxed');sfx.padStart();
+  await wait(1000);$('sign').classList.add('on');sfx.boom();
+  await wait(1300);$('sign').classList.add('ai');sfx.shimmer();
+  await wait(1100);
+  cam(960,560,.96,2600,'cubic-bezier(.55,0,.15,1)');
+  await wait(500);$('room-dark').classList.add('lit');$('world').classList.add('dawn');stage.classList.add('hud');
+  for(const role of ['Manager',...WORKERS]){await wait(220);(role==='Manager'?$('morgan'):st(role)).classList.remove('off');sfx.click()}
+  await wait(900);
+
+  // the brief
+  openChat();cam(960,520,1.5,1100);
+  post('Shrey','Students keep asking for a discount. Can we ship <code>STUDENT10</code> today? 10% off, min ₹299, capped at ₹100.',300);
+  STICKIES.forEach(([id],i)=>later(i*100,()=>$('sk-'+id).classList.add('show')));
+  await wait(900);
+  await say('Manager','House rule: no code until we have a spec and failing tests.',700);
+
+  // architect
+  clockTo(12,800);setCalls(1);decide(0,2600);
+  cam(560,700,1.05,1200);await walkTo('Architect',1200);
+  shot('Architect',1.22,900);
+  sticky('spec',1);pipe('spec','active');
+  await handoff('Manager','Architect','→ Alex · write the spec',950);
+  mood('Architect','typing');holoOpen('Architect','spec.md');setCalls(2);clockTo(17,2400);
+  await typeLines('Architect',['FEASIBLE: yes','API: apply-coupon → {valid, discount}','','ACCEPTANCE','1. STUDENT10 + 2 pizzas (₹518) → ₹52 off','2. 1 burger (₹179) → not eligible','3. ₹488 bag → −₹49 line in the bag','4. Invalid code → error, no discount','5. Bag changes → discount recalculates'],190);
+  mood('Architect','typing',false);holoStatus('Architect','✓ SAVED');holoFoot('Architect','<span>5 acceptance criteria</span><b class="green">feasible</b>');
+  sticky('spec',2);pipe('spec','done');
+  post('Architect','<code>spec.md</code> is up. 5 acceptance criteria.',200);
+  await say('Architect','Spec’s done. A ₹518 bag gets ₹52 off.',600);
+
+  // QA writes failing tests
+  clockTo(22,600);setCalls(3);decide(1,2400);
+  holoClose('Architect');
+  shot('QA',1.15,1000);
+  const toRobin=walkTo('QA',1000);
+  await handoff('Architect','QA','→ Robin · tests before code',950);
+  await toRobin;
+  sticky('tests',1);pipe('tests','active');
+  mood('QA','typing');holoOpen('QA','feature.acceptance.test.mjs');setCalls(5);clockTo(30,1800);
+  for(const t of ['API: STUDENT10 + 2 pizzas → valid, ₹52','API: 1 burger below ₹299 → not eligible','UI: ₹488 bag shows a −₹49 line','UI: invalid code → error, no line','UI: bag changes recalculate discount']){await wait(260);testRow('QA',t,'fail');sfx.fail()}
+  mood('QA','typing',false);holoStatus('QA','RAN · 0 PASS');holoFoot('QA','<span>no feature code exists yet</span><b class="red">5 failing ✓ expected</b>');
+  sticky('tests',2);pipe('tests','done');
+  await say('QA','Five tests. All red. Exactly how it should be.',600);
+
+  // backend
+  clockTo(39,600);setCalls(6);decide(2,2400);
+  holoClose('QA');
+  cam(960,700,1.05,1000);await walkTo('Backend',1000);
+  shot('Backend',1.22,800);
+  sticky('api',1);pipe('api','active');
+  await handoff('Manager','Backend','→ Sam · build the API',950);
+  mood('Backend','typing');holo('Backend').classList.add('wide');holoOpen('Backend','api/feature.mjs');setCalls(8);clockTo(42,2600);
+  await typeLines('Backend',["export function handle(action, body, ctx) {","  let subtotal = 0;","  for (const item of body.items) {","    // price comes from the server, never the browser","    const p = ctx.products.find(x => x.id === item.id);","    subtotal += p.price * item.qty;","  }","  if (body.code !== 'STUDENT10' || subtotal < 299)","    return { status: 200, valid: false, discount: 0 };","  let discount = Math.round(subtotal * 0.10);","  if (discount > 100) discount = 100;","  return { status: 200, valid: true, discount };","}"],260,true);
+  mood('Backend','typing',false);holoStatus('Backend','✓ SAVED · TESTS RUN');holoFoot('Backend','<span>API tests green · UI pending</span><b>8 pass / 9 fail</b>');
+  sticky('api',2);pipe('api','done');
+  post('Backend','<code>api/feature.mjs</code> ✓ <code>POST /api/feature/apply-coupon</code>',200);
+  mood('Backend','lookR');
+  await say('Backend','Riya, it’s yours. Send me ids, not prices.',500);
+  mood('Backend','lookR',false);
+
+  // frontend
+  clockTo(55,600);setCalls(9);decide(3,2400);
+  holoClose('Backend');
+  const toRiya=walkTo('Frontend',900);
+  shot('Frontend',1.22,1000);
+  sticky('ui',1);pipe('ui','active');
+  await handoff('Backend','Frontend','→ Riya · put it in the bag',950);
+  await toRiya;
+  mood('Frontend','typing');holoOpen('Frontend','site/feature.js · live preview');setCalls(11);clockTo(63,2400);
+  holo('Frontend').querySelector('.holo-body').innerHTML=`<div class="ui-mock"><h4>🎓 Student discount</h4><div class="row"><div class="inp" id="ui-inp"></div><div class="btn" id="ui-btn">Apply</div></div><div class="msg" id="ui-msg">✓ STUDENT10 applied: 10% off</div><div class="lines"><div><span>Subtotal</span><span>₹518</span></div><div class="disc" id="ui-disc"><span>Student Discount (STUDENT10)</span><span>−₹52</span></div></div></div>`;
+  await wait(400);
+  await type($('ui-inp'),'STUDENT10',16,()=>sfx.tick());
+  $('ui-btn').classList.add('press');sfx.click();await wait(140);$('ui-btn').classList.remove('press');
+  await wait(200);$('ui-msg').classList.add('show');await wait(200);$('ui-disc').classList.add('show');sfx.land();
+  mood('Frontend','typing',false);holoStatus('Frontend','✓ SAVED · TESTS RUN');holoFoot('Frontend','<span>every test in the repo</span><b class="green">17 pass / 0 fail</b>');
+  sticky('ui',2);pipe('ui','done');
+  await say('Frontend','Panel’s in the bag.',500);
+
+  // the moment of truth
+  clockTo(96,700);setCalls(12);decide(4,2400);
+  holoClose('Frontend');
+  cam(900,700,1.05,1000);await walkTo('QA',1100);
+  shot('QA',1.22,700);
+  sticky('verify',1);pipe('verify','active');
+  await handoff('Frontend','QA','→ Robin · verify all 17',900);
+  await say('Manager','Robin. Run everything. Trust nobody.',300);
+  stage.classList.add('tight');sfx.beat();
+  mood('QA','think');holoOpen('QA','node --test · all suites','● RUNNING');setCalls(14);
+  holoShot('QA',1.6,900);
+  $('meter').classList.add('show');
+  const body=holo('QA').querySelector('.holo-body');body.style.maxHeight='330px';body.style.overflow='hidden';
+  const all=['API: STUDENT10 with 2 pizzas returns valid discount','API: 1 burger below 299 is not eligible','UI: 488 subtotal shows a negative line','UI: invalid code shows an error','UI: bag changes recalculate the discount','Contract: frontend exports feature','Contract: initialState() is a plain object','Contract: render() handles empty + full bags','Contract: onAction ignores unknown actions','Contract: hooks have the right shape','Contract: backend 404s unknown actions','API: independent check rejects bad coupon','API: independent check, ₹49 on ₹488','API: independent check rejects ₹259','API: independent check caps at ₹100','UI: independent check survives bag changes','UI: independent check renders coupon section'];
+  for(let i=0;i<all.length;i++){
+    const row=testRow('QA',all[i],'wait');
+    while(body.scrollHeight>body.clientHeight&&body.firstElementChild)body.firstElementChild.remove();
+    await wait(Math.max(90,260-i*14));
+    row.className='t-row pass';row.querySelector('.ic').textContent='✓';sfx.pass(i);
+    $('m-num').textContent=`${i+1} / 17`;$('m-fill').style.width=((i+1)/17*100)+'%';
+    if(i%4===3)sfx.beat();
+  }
+  clockTo(102,300);await wait(300);
+  $('m-num').classList.add('green');$('stamp').classList.add('show');flash(600);sfx.chord();sfx.padBright();
+  mood('QA','think',false);mood('QA','happy');holoStatus('QA','PASS');
+  await wait(1400);$('stamp').classList.add('out');$('meter').classList.remove('show');stage.classList.remove('tight');
+  sticky('verify',2);pipe('verify','done');
+  clockTo(116,900);setCalls(15);
+  holoClose('QA');cam(960,600,1,1100);
+  confetti();
+  ['Manager',...WORKERS].forEach((r,i)=>later(i*100,()=>{mood(r,'happy');mood(r,'bounce')}));
+  say('Manager','17 for 17. Ship it.',900);
+  await wait(900);
+  post('Shrey','wait… it’s already live?? 🔥',300);
+  await wait(2000);
+  ['Manager',...WORKERS].forEach(r=>mood(r,'bounce',false));
+
+  // shipped
+  $('product').classList.add('show');sfx.whoosh();
+  await wait(3600);
+
+  // end card
+  $('endcard').classList.add('show');sfx.boom();
+  await wait(1500);
+  for(const b of document.querySelectorAll('#endcard [data-count],#endcard [data-time]'))countUp(b);
+  await wait(4500);sfx.padStop();
+  document.body.classList.remove('playing');
+}
 async function countUp(el){
   const target=Number(el.dataset.count??el.dataset.time),isTime=el.dataset.time!=null;
   for(let i=0;i<=30;i++){
@@ -511,11 +645,13 @@ async function countUp(el){
 }
 
 // ---- controls ----
+const SHORT=new URLSearchParams(location.search).get('cut')==='short';
+const play=()=>SHORT?filmShort():film();
 let started=false;
 function start(){
   if(started)return;started=true;
   sfx.init();$('start').classList.add('gone');document.body.classList.add('playing');
-  film();
+  play();
 }
 function restart(){
   waiters=[];filmT=0;seekTo=0;tickers.clear();
@@ -523,7 +659,7 @@ function restart(){
   sfx.padStop();chatOpen=false;paused=false;document.body.classList.remove('paused');
   stage.className='';stage.innerHTML=INITIAL;fit();build();
   $('replay').addEventListener('click',restart);
-  document.body.classList.add('playing');requestAnimationFrame(()=>film());
+  document.body.classList.add('playing');requestAnimationFrame(()=>play());
 }
 function togglePause(){
   if(!started)return;paused=!paused;document.body.classList.toggle('paused',paused);
@@ -574,6 +710,6 @@ function renderMode(){
   };
   window.__wavChunk=(i,size)=>{let s='';const part=window.__wav.subarray(i*size,(i+1)*size);for(let j=0;j<part.length;j+=8192)s+=String.fromCharCode(...part.subarray(j,j+8192));return btoa(s)};
   $('start').style.display='none';
-  document.fonts.ready.then(()=>{started=true;window.__ready=true;film().then(()=>{window.__done=true})});
+  document.fonts.ready.then(()=>{started=true;window.__ready=true;play().then(()=>{window.__done=true})});
 }
 })();

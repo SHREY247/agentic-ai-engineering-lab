@@ -1,6 +1,7 @@
 // Renders /demo to an MP4, frame by frame, with its synthesized soundtrack.
 // Needs the server running, Google Chrome and ffmpeg. No npm packages.
 //   node scripts/render-film.mjs [output.mp4] [--fps 30] [--url http://127.0.0.1:4173/demo]
+//   60-second cut: --url 'http://127.0.0.1:4173/demo?cut=short'
 import {spawn} from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -9,7 +10,8 @@ import path from 'node:path';
 const args=process.argv.slice(2);
 const opt=(name,fallback)=>{const i=args.indexOf(name);return i>=0?args.splice(i,2)[1]:fallback};
 const fps=Number(opt('--fps',30));
-const url=opt('--url','http://127.0.0.1:4173/demo')+'?render=1';
+const base=opt('--url','http://127.0.0.1:4173/demo');
+const url=base+(base.includes('?')?'&':'?')+'render=1';
 const output=path.resolve(args[0]||'campusbites-film.mp4');
 const chrome=process.env.CHROME||'google-chrome';
 const tmp=fs.mkdtempSync(path.join(os.tmpdir(),'film-'));
